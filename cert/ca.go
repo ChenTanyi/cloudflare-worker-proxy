@@ -52,9 +52,11 @@ type CA struct {
 func NewCA(caFile string) (*CA, error) {
 	_, err := os.Stat(caFile)
 	if err == nil {
+		log.Debugf("Load CA from %s", caFile)
 		return loadCA(caFile)
 	}
 	if os.IsNotExist(err) {
+		log.Debugf("CA not found, create to %s", caFile)
 		return createCA(caFile)
 	}
 	return nil, err
@@ -96,6 +98,7 @@ func (ca *CA) Sign(commonName string) (*tls.Certificate, error) {
 	if cert := ca.getSignedCert(commonName, true); cert != nil {
 		return cert, nil
 	}
+	log.Debugf("Unable to find cert for '%s', creating...", commonName)
 	return ca.signCert(commonName)
 }
 
@@ -159,6 +162,7 @@ func (ca *CA) getSignedCert(commonName string, lock bool) *tls.Certificate {
 		defer ca.mu.RUnlock()
 	}
 	if _, ok := ca.names[commonName]; ok {
+		log.Debugf("Found cert for '%s'", commonName)
 		return ca.signed
 	}
 	return nil
@@ -177,6 +181,7 @@ func loadCA(caFile string) (*CA, error) {
 		if block == nil {
 			break
 		}
+		log.Debugf("Found pem block of type '%s'", block.Type)
 		switch block.Type {
 		case RSA_PRIVATE_KEY_HEADER:
 			ca.PrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
