@@ -24,6 +24,8 @@ import (
 const (
 	RSA_PRIVATE_KEY_HEADER = "RSA PRIVATE KEY"
 	CERTIFICATE_KEY_HEADER = "CERTIFICATE"
+
+	dnsCapacity = 20
 )
 
 var (
@@ -174,7 +176,12 @@ func loadCA(caFile string) (*CA, error) {
 		return nil, err
 	}
 
-	ca := &CA{}
+	ca := &CA{
+		mu:    &sync.RWMutex{},
+		names: make(map[string]struct{}),
+		dns:   make([]string, 0, dnsCapacity),
+		ip:    make([]net.IP, 0, dnsCapacity),
+	}
 	for {
 		var block *pem.Block
 		block, content = pem.Decode(content)
@@ -211,7 +218,12 @@ func createCA(caFile string) (*CA, error) {
 		return nil, err
 	}
 
-	ca := &CA{}
+	ca := &CA{
+		mu:    &sync.RWMutex{},
+		names: make(map[string]struct{}),
+		dns:   make([]string, 0, dnsCapacity),
+		ip:    make([]net.IP, 0, dnsCapacity),
+	}
 	privateKey, err := rsa.GenerateKey(rand.Reader, RSABits)
 	if err != nil {
 		return nil, err
