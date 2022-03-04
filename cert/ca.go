@@ -95,6 +95,10 @@ func (ca *CA) ExportCertToFile(file string) error {
 	return ca.ExportCert(f)
 }
 
+func (ca *CA) GetCertificate(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	return ca.Sign(chi.ServerName)
+}
+
 func (ca *CA) Sign(commonName string) (*tls.Certificate, error) {
 	commonName = ca.calcCommonName(commonName)
 	if cert := ca.getSignedCert(commonName, true); cert != nil {

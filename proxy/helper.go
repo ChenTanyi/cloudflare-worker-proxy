@@ -3,11 +3,12 @@ package proxy
 import (
 	"bufio"
 	"context"
+	"crypto/tls"
 	"io"
 	"net"
 	"net/http"
+	"strings"
 
-	"github.com/chentanyi/cloudflare-worker-proxy/cert"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,10 +19,15 @@ var (
 type Options struct {
 	Target      string
 	Password    string
-	CA          *cert.CA
+	CA          CA
 	SslInsecure bool
+	TCPListen   func() (net.Listener, error)
 
 	httpsDail func(ctx context.Context, network, address string) (net.Conn, error)
+}
+
+type CA interface {
+	GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error)
 }
 
 func WriteResponse(w http.ResponseWriter, status int, message string) {
@@ -54,4 +60,18 @@ func readBuf(dst io.Writer, buf *bufio.Reader, message string) {
 	if err != nil || n < buffered {
 		log.Errorf("Copy buf [%s]: %v", message, err)
 	}
+}
+
+func fixupTarget(target string) string {
+	if target == "" {
+		return ""
+	}
+
+	if !(strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://")) {
+		target = "https://" + target
+	}
+	if !strings.HasSuffix(target, "/") {
+		target = target + "/"
+	}
+	return target
 }
