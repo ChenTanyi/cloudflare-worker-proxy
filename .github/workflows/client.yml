@@ -1,0 +1,59 @@
+name: Build Proxy Client
+
+on:
+  push:
+    branches:
+      - client
+    tags:
+      - "*"
+  workflow_dispatch:
+
+jobs:
+  cancel_actions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: t-actions/cancel-actions@master
+
+  param:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.param.outputs.ref }}
+      tag: ${{ steps.param.outputs.tag }}
+      is_branch: ${{ steps.param.outputs.is_branch }}
+    steps:
+      - id: param
+        uses: t-actions/calc-release@master
+
+  release:
+    needs: param
+    runs-on: ubuntu-latest
+    env:
+      OUTPUT: build
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ needs.param.outputs.ref }}
+      - uses: t-actions/delete-tag@master
+        if: ${{ needs.param.outputs.is_branch }}
+        with:
+          tag: ${{ needs.param.outputs.tag }}
+          ignore_error: true
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "1.17"
+      - uses: t-actions/go-build@master
+        with:
+          input: ./main
+          output_dir: ${{ env.OUTPUT }}
+          platforms: aix/ppc64 android/arm64 darwin/amd64 linux/386 linux/amd64 linux/arm linux/arm64 linux/mips linux/mips64 linux/mips64le linux/mipsle linux/ppc64 linux/ppc64le linux/riscv64 linux/riscv64 linux/s390x windows/386 windows/amd64 windows/arm
+      - name: List all build result
+        run: |
+          ls -al ${{ env.OUTPUT }}
+      - name: Upload all build result
+        uses: svenstaro/upload-release-action@2.2.0
+        with:
+          repo_token: ${{ github.token }}
+          file: ${{ env.OUTPUT }}/*
+          tag: ${{ needs.param.outputs.tag }}
+          file_glob: true
+          overwrite: true
