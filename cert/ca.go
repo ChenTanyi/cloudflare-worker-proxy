@@ -114,7 +114,10 @@ func (ca *CA) calcCommonName(commonName string) string {
 	}
 	dot := strings.IndexByte(commonName, '.')
 	if dot > 0 {
-		return "*" + commonName[dot:]
+		dot2 := strings.IndexByte(commonName[dot+1:], '.')
+		if dot2 > 0 {
+			return "*" + commonName[dot:]
+		}
 	}
 	return commonName
 }

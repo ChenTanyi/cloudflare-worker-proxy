@@ -58,7 +58,6 @@ func TestSignCert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dns = "*.com"
 	if cert.DNSNames[0] != dns {
 		t.Fatalf("Unexpected cert dns %s", dns)
 	}
