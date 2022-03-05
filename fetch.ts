@@ -9,7 +9,7 @@ async function handleFetch(request: Request): Promise<Response> {
     let newHeaders = new Headers();
     for (let [key, value] of request.headers.entries()) {
         let exclude = false;
-        for (let excludePrefix in excludeHeadersPrefix) {
+        for (let excludePrefix of excludeHeadersPrefix) {
             if (key.toLowerCase().startsWith(excludePrefix)) {
                 exclude = true;
                 break;
@@ -17,7 +17,8 @@ async function handleFetch(request: Request): Promise<Response> {
         }
         if (!exclude) newHeaders.append(key, value);
     }
-    return fetch(requestUrl, request);
+    let newRequest = new Request(requestUrl, { method: request.method, headers: newHeaders, body: request.body });
+    return fetch(newRequest);
 }
 
 function validateRequest(request: Request): boolean {
